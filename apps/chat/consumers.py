@@ -39,3 +39,30 @@ class ChatConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps({
             'message': message
         }))
+
+class ChatAppConsumer(WebsocketConsumer):
+
+    def listen_to_group(self, group_id):
+        async_to_sync(self.channel_layer.group_add)(
+            group_id,
+            self.channel_name
+        )
+
+    def unlisten_to_group(self, group_id):
+        async_to_sync(self.channel_layer.group_discard)(
+            group_id,
+            self.channel_name
+        )
+
+    def receive(self, text_data_json):
+        text_data = json.dumps(text_data_json)
+
+        e = text_data['type']
+
+        if e == 'navigation':
+            pass
+        elif e == 'chat':
+            pass
+        else:
+            raise 'Invalid message type!'
+
