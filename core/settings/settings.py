@@ -31,8 +31,10 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '69.164.201.42']
 # Application definition
 
 INSTALLED_APPS = [
+    'core.models',
     'channels',
-    'chat',
+    'apps.user',
+    'apps.chat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -109,6 +111,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTH_USER_MODEL = 'models.ChatUser'
 
 
 # Internationalization
