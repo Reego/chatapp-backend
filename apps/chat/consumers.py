@@ -2,7 +2,7 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import JsonWebsocketConsumer
 import json
 
-from core.models import Group
+from core.models.models import Group
 
 ERROR_COMMAND_MESSAGE = {
     'message': 'Invalid Command',
@@ -79,15 +79,16 @@ class ChatAppConsumer(JsonWebsocketConsumer):
         elif command['type'] == 'change_name':
             Group.change_name(command['new_name'])
         elif command['type'] == 'list': # individual group command
-            self.send({
+            self.send(
                 ChatAppConsumer.create_message(
                     Group.get_users(command['group_id']),
                     ''
-            })
+                )
+            )
         else:
-            self.send({
+            self.send(
                 ERROR_COMMAND_MESSAGE
-            })
+            )
 
     @staticmethod
     def create_message(message, username):

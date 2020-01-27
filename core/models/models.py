@@ -2,11 +2,11 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from bleach import clean
-from timezone import timezone
+from datetime import datetime
 
 class ChatUser(models.Model):
-    user = models.ForeignKey(User, unique=True)
-    groups = models.ManyToManyField(Group)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, unique=True)
+    groups = models.ManyToManyField('Group')
 
     def create_group(self, data):
         group_name = data['group_name']
@@ -54,11 +54,12 @@ post_save.connect(create_chat_user, sender=User)
 
 class Group(models.Model):
     group_name = models.CharField(max_length=150)
-    last_message_time = models.DateField(null=True)
+    last_message_time = models.DateTimeField(null=True)
 
     def send_message(self, content, username):
-        now = timezone.now()
-        if now > :
+        now = datetime.utcnow()
+        time_difference = now - self.last_message_time
+        if difference.days > 0 :
             date_message = Message.objects.create(group=self, content=now)
             date_message.save()
         message = Message.objects.create(group=self, content=clean(content), username=username)
@@ -89,6 +90,6 @@ class Notifications(models.Model):
     read = models.BooleanField(default=True)
 
 class Message(models.Model):
-    group = models.ForeignKey(group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
     content = models.TextField()
     username = models.CharField(max_length=150)

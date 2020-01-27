@@ -31,7 +31,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '69.164.201.42']
 # Application definition
 
 INSTALLED_APPS = [
-    'core.models',
+    'core',
     'channels',
     'apps.user',
     'apps.chat',
@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'app.urls'
+ROOT_URLCONF = 'core.settings.urls'
 
 TEMPLATES = [
     {
@@ -71,9 +71,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'app.wsgi.application'
+WSGI_APPLICATION = 'core.settings..wsgi.application'
 
-ASGI_APPLICATION = 'app.routing.application'
+ASGI_APPLICATION = 'core.settings.routing.application'
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -111,8 +111,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-AUTH_USER_MODEL = 'models.ChatUser'
 
 
 # Internationalization
