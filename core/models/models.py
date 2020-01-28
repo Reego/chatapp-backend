@@ -5,25 +5,35 @@ from bleach import clean
 from datetime import datetime
 
 class ChatUser(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     groups = models.ManyToManyField('Group')
+
+    @classmethod
+    def get_chat_user(cls, user):
+        try:
+            return ChatUser.objects.get(user=user)
+        except ChatUser.DoesNotExist:
+            return None
 
     def create_group(self, data):
         group_name = data['group_name']
         group = Group.objects.create(group_name=group_name)
         group.save()
+
         notifications = Notifications.objects.create(user=self, group=group)
         notifications.save()
-        self.groups.collection.add(group)
+
+        self.groups.add(group)
+
+        return group
 
     def delete_group(self, data):
-        group_name = data['group_name']
         group_id = data['group_id']
 
         group = Group.objects.get(id=group_id)
-        self.groups.collection.remove(group)
-        if len(group.user_set.all()) == 0:
-            group.notifications.delete()
+        self.groups.remove(group)
+        if len(group.chatuser_set.all()) == 0:
+            group.get_notifications().delete()
             group.delete()
 
     def get_group(self, group, return_messages = False):
@@ -45,12 +55,14 @@ class ChatUser(models.Model):
     def username(self):
         return self.user.username
 
+    def get_notifications(self):
+        return Notifications.objects.get(user__id=self.id)
+
 def create_chat_user(sender, instance, created, **kwargs):
     if created:
         ChatUser.objects.create(user=instance)
 
 post_save.connect(create_chat_user, sender=User)
-
 
 class Group(models.Model):
     group_name = models.CharField(max_length=150)
@@ -66,18 +78,21 @@ class Group(models.Model):
         self.last_message_time = now
         message.save()
 
+    def get_notifications(self):
+        return Notifications.objects.get(group__id=self.id)
+
     @classmethod
     def add_user(cls, group_id, username):
         user = ChatUser.objects.get(username=username).groups.add(group)
         if user:
             group = Group.objects.get(id=group_id)
-            user.groups.collection.add(group)
+            user.groups.add(group)
 
     @classmethod
     def remove_user(cls, group_id, username):
         user = ChatUser.objects.get(username=username)
         if user:
-            user.groups.collection.remove(id=group_id)
+            user.groups.remove(id=group_id)
 
     @classmethod
     def change_name(cls, group_id, new_name):
