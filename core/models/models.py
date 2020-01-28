@@ -36,16 +36,11 @@ class ChatUser(models.Model):
             group.get_notifications().delete()
             group.delete()
 
-    def get_group(self, group, return_messages = False):
+    def get_group(self, group_id):
+        return self.groups.get(id=group_id)
 
-        group_obj = {
-            'group_id': group.id,
-            'group_name': group.name,
-            'messages': group.message,
-            'read': Notification.objects.get(user=self, group=group).read
-        }
-
-        return group_obj
+    def has_read(self, group_id):
+        return Notification.objects.get(user=self, group=group).read
 
     def get_groups(self):
 
