@@ -36,9 +36,9 @@ class ChatAppConsumer(JsonWebsocketConsumer):
             self.channel_name
         )
 
-    def group_send(self, payload):
+    def group_send(self, group_id, payload):
         async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
+            group_id,
             payload
         )
 
@@ -55,14 +55,14 @@ class ChatAppConsumer(JsonWebsocketConsumer):
 
     def receive_user_event(self, body):
 
-        user = self.scope['user']
+        chat_user = ChatUser.get_chat_user(self.scope['user'])
 
         if body['type'] == 'create':
-            user.create_group(body['command'])
+            chat_user.create_group(body['command'])
         elif body['type'] == 'delete':
-            user.delete_group(body['command'])
+            chat_user.delete_group(body['command'])
 
-        self.send(scope['command'])
+        self.send(body['command'])
 
     def receive_chat_event(self, body):
 
@@ -74,14 +74,15 @@ class ChatAppConsumer(JsonWebsocketConsumer):
     def receive_chat_special_command(self, command):
 
         # if invalid command, only send back to user
+        group = Group.objects.get(id=command['group_id'])
         if command['type'] == 'add':
-            Group.add_user(command['group_id'], command['username'])
+            group.add_user(command['group_id'], command['username'])
         elif command['type'] == 'change_name':
-            Group.change_name(command['new_name'])
+            group.change_name(command['new_name'])
         elif command['type'] == 'list': # individual group command
             self.send(
                 ChatAppConsumer.create_message(
-                    Group.get_users(command['group_id']),
+                    group.get_users(command['group_id']),
                     ''
                 )
             )

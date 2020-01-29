@@ -5,8 +5,14 @@ from bleach import clean
 from datetime import datetime
 
 class ChatUser(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     groups = models.ManyToManyField('Group')
+
+    # user related
+
+    @property
+    def username(self):
+        return self.user.username
 
     @classmethod
     def get_chat_user(cls, user):
@@ -15,12 +21,14 @@ class ChatUser(models.Model):
         except ChatUser.DoesNotExist:
             return None
 
+    # group related
+
     def create_group(self, data):
         group_name = data['group_name']
         group = Group.objects.create(group_name=group_name)
         group.save()
 
-        notifications = Notifications.objects.create(user=self, group=group)
+        notifications = Notifications.objects.create(chat_user=self, group=group)
         notifications.save()
 
         self.groups.add(group)
@@ -33,25 +41,23 @@ class ChatUser(models.Model):
         group = Group.objects.get(id=group_id)
         self.groups.remove(group)
         if len(group.chatuser_set.all()) == 0:
-            group.get_notifications().delete()
+            self.get_notifications_obj(group.id).delete()
             group.delete()
 
     def get_group(self, group_id):
         return self.groups.get(id=group_id)
 
+    def get_groups(self):
+
+        return [self.get_group(g.id) for g in self.groups.all()]
+
+    # notifications related
+
     def has_read(self, group_id):
         return Notification.objects.get(user=self, group=group).read
 
-    def get_groups(self):
-
-        return [get_group(g, False) for g in self.groups]
-
-    @property
-    def username(self):
-        return self.user.username
-
-    def get_notifications(self):
-        return Notifications.objects.get(user__id=self.id)
+    def get_notifications_obj(self, group_id):
+        return Notifications.objects.filter(chat_user__id=self.id, group__id=group_id).get()
 
 def create_chat_user(sender, instance, created, **kwargs):
     if created:
@@ -65,37 +71,27 @@ class Group(models.Model):
 
     def send_message(self, content, username):
         now = datetime.utcnow()
-        time_difference = now - self.last_message_time
-        if difference.days > 0 :
+        if self.last_message_time is None or (now - self.last_message_time).days > 0:
             date_message = Message.objects.create(group=self, content=now)
             date_message.save()
         message = Message.objects.create(group=self, content=clean(content), username=username)
         self.last_message_time = now
         message.save()
 
-    def get_notifications(self):
-        return Notifications.objects.get(group__id=self.id)
+    def add_user(self, username):
+        chat_user = User.objects.get(username=username).chatuser
+        chat_user.groups.add(self)
 
-    @classmethod
-    def add_user(cls, group_id, username):
-        user = ChatUser.objects.get(username=username).groups.add(group)
-        if user:
-            group = Group.objects.get(id=group_id)
-            user.groups.add(group)
+    def remove_user(self, username):
+        chat_user = User.objects.get(username=username).chatuser#ChatUser.objects.filter(user__username=username).get()
+        chat_user.groups.remove(self)
 
-    @classmethod
-    def remove_user(cls, group_id, username):
-        user = ChatUser.objects.get(username=username)
-        if user:
-            user.groups.remove(id=group_id)
-
-    @classmethod
-    def change_name(cls, group_id, new_name):
-        cls.objects.get(id=group_id).group_name = new_name
+    def change_name(self, new_name):
+        self.group_name = new_name
 
 
 class Notifications(models.Model):
-    user = models.ForeignKey(ChatUser, on_delete=models.CASCADE)
+    chat_user = models.ForeignKey(ChatUser, on_delete=models.CASCADE)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
     read = models.BooleanField(default=True)
 
