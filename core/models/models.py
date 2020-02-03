@@ -23,8 +23,7 @@ class ChatUser(models.Model):
 
     # group related
 
-    def create_group(self, data):
-        group_name = data['group_name']
+    def create_group(self, group_name):
         group = Group.objects.create(group_name=group_name)
         group.save()
 
@@ -35,9 +34,7 @@ class ChatUser(models.Model):
 
         return group
 
-    def delete_group(self, data):
-        group_id = data['group_id']
-
+    def delete_group(self, group_id):
         group = Group.objects.get(id=group_id)
         self.groups.remove(group)
         if len(group.chatuser_set.all()) == 0:
@@ -69,18 +66,22 @@ class Group(models.Model):
     group_name = models.CharField(max_length=150)
     last_message_time = models.DateTimeField(null=True)
 
-    def send_message(self, content, username):
-        now = datetime.utcnow()
-        if self.last_message_time is None or (now - self.last_message_time).days > 0:
-            date_message = Message.objects.create(group=self, content=now)
-            date_message.save()
+    def send_message(self, content, username=None):
+        if(username):
+            now = datetime.utcnow()
+            if self.last_message_time is None or (now - self.last_message_time).days > 0:
+                date_message = Message.objects.create(group=self, content=now)
+                date_message.save()
+            self.last_message_time = now
         message = Message.objects.create(group=self, content=clean(content), username=username)
-        self.last_message_time = now
         message.save()
 
     def add_user(self, username):
         chat_user = User.objects.get(username=username).chatuser
-        chat_user.groups.add(self)
+        if not (chat_user in self.chatuser_set):
+            chat_user.groups.add(self)
+        else:
+            raise Exception('User already exists')
 
     def remove_user(self, username):
         chat_user = User.objects.get(username=username).chatuser#ChatUser.objects.filter(user__username=username).get()
@@ -89,6 +90,9 @@ class Group(models.Model):
     def change_name(self, new_name):
         self.group_name = new_name
 
+    def get_users(self):
+        chatusers = [chatuser.user.username for chatuser in group.chatuser_set.all()]
+        return chatusers.join(', ')
 
 class Notifications(models.Model):
     chat_user = models.ForeignKey(ChatUser, on_delete=models.CASCADE)
