@@ -78,7 +78,7 @@ class Group(models.Model):
 
     def add_user(self, username):
         chat_user = User.objects.get(username=username).chatuser
-        if not (chat_user in self.chatuser_set):
+        if not (chat_user in self.chatuser_set.all()):
             chat_user.groups.add(self)
         else:
             raise Exception('User already exists')

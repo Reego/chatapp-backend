@@ -55,23 +55,18 @@ class TestChatUser:
 
     def test_create_group(self, chat_user_instance): # tests create_group method
         GROUP_NAME = 'GROUP_NAME'
-        data = {
-            'group_name': GROUP_NAME
-        }
-        group = chat_user_instance.create_group(data)
+        group = chat_user_instance.create_group(GROUP_NAME)
 
         assert chat_user_instance.groups.filter(id=group.id).exists()
         assert group.group_name == chat_user_instance.groups.get().group_name
 
     def test_delete_group(self, chat_user_instance, create_chat_group): # tests delete_group_method
         group = create_chat_group(chat_user_instance)
+        
+        group_id = group.id
+        chat_user_instance.delete_group(group.id)
 
-        data = {
-            'group_id': group.id,
-        }
-        chat_user_instance.delete_group(data)
-
-        assert not chat_user_instance.groups.filter(id=group.id).exists()
+        assert not chat_user_instance.groups.filter(id=group_id).exists()
 
     def test_get_group(self, chat_user_instance, create_chat_group): # tests get_group method
         group = create_chat_group(chat_user_instance)
