@@ -27,7 +27,7 @@ class ChatAppConsumer(JsonWebsocketConsumer):
     # received incoming WebSocket connection
     def connect(self):
 
-        user = scope['user']
+        user = self.scope['user']
 
         for group in user.chatuser.groups:
             self.listen_to_group(group.id)
