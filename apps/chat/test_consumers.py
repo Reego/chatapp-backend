@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 
 from django.test import Client
 from django.contrib.auth.models import User
@@ -11,32 +12,32 @@ from core.models.models import ChatUser
 
 from core.settings.routing import application
 
+TEST_CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+@database_sync_to_async
 def create_user(username='username', password='password'):
     user = User.objects.create_user(username=username, password=password)
     chatuser = ChatUser.objects.create(user=user)
     user.save()
-    return user
-
-@pytest.fixture
-def chatapp_instance():
-    async def inner():
-        communicator = WebsocketCommunicator(ChatAppConsumer, 'ws/chat/')
-        connect, subprotocol = await communicator.connect()
-        return (communicator, connect, subprotocol)
-    return inner
+    return chatuser
 
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
-class WebsocketTestCase:
+class TestWebsocketChatApp:
 
-    def get_authenticated_user(self, client):
-        user, chatuser = create_user()
-        client.force_login(user)
-        return user, chatuser
+    async def get_authenticated_user(self, client, settings):
+        settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
+        chatuser = await create_user()
+        client.force_login(chatuser.user)
+        return chatuser
 
-    async def get_(self):
+    async def get_authenticated_communicator(self, settings):
         client = Client()
-        user, chatuser = get_authenticated_user(client)
+        chatuser = await self.get_authenticated_user(client, settings)
 
         communicator = WebsocketCommunicator(
             application=application,
@@ -49,7 +50,14 @@ class WebsocketTestCase:
 
         connected, _ = await communicator.connect()
         assert connected is True
-        await connected.disconnect()
+        return (communicator, chatuser)
+
+    async def test_simple(self, settings):
+        communicator, chatuser = await self.get_authenticated_communicator(settings)
+        communicator.disconnect()
+        assert False
+
+        
 
 
 # @pytest.mark.asyncio
