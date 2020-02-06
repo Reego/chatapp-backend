@@ -29,7 +29,7 @@ class ChatAppConsumer(JsonWebsocketConsumer):
 
         user = self.scope['user']
 
-        for group in user.chatuser.groups:
+        for group in user.chatuser.groups.all():
             self.listen_to_group(group.id)
 
         self.accept()
