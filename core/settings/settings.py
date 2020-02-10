@@ -15,8 +15,9 @@ SECRET_KEY = 'qtvt&)0s#&5puexsh1ufwghzr5_vnk=27k3hac8_op+!cgl8bd'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '69.164.201.42']
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '69.164.201.42', '0.0.0.0']
 
+# CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
@@ -24,8 +25,9 @@ INSTALLED_APPS = [
     'core',
     'apps.user',
     'apps.chat',
-    'channels',
-    'rest_framework',
+    # 'channels',
+    # 'rest_framework',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,10 +37,12 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.settings.middleware.simple_middleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -64,13 +68,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.settings.wsgi.application'
 
-ASGI_APPLICATION = 'core.settings.routing.application'
+# ASGI_APPLICATION = 'core.settings.routing.application'
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('0.0.0.0', 6379)],
+            "hosts": [('127.0.0.1', 6379)],
         },
     },
 }
@@ -104,17 +108,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Rest Framework
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication'
-    ]
-    # 'DEFAULT_PERMISSION_CLASSES' = [
-    #     'rest_framework.permissions.DjangoModelPermissions'
-    # ]
-}
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -128,6 +121,40 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# CSRF_HEADER_NAME = 'HTTP-X-CSRFTOKEN'
+
+# CSRF_USE_SESSIONS = False
+
+# CSRF_COOKIE_SECURE = False
+
+# CSRF_COOKIE_HTTPONLY = False
+
+CORS_ORIGIN_WHITELIST = (
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1',
+    # 'localhost',
+    # '127.0.0.1',
+    # '127.0.0.1:3000'
+)
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'localhost:3000',
+    'localhost',
+    '127.0.0.1',
+    '127.0.0.1:3000',
+]
+
+# CORS_ORIGIN_ALLOW_ALL = True
+
+# CORS_ALLOW_CREDENTIALS = True
+
+# CSRF_TRUSTED_ORIGINS = [
+#     'localhost:3000',
+# ]
 
 
 # Static files (CSS, JavaScript, Images)

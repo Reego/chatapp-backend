@@ -16,9 +16,74 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
+
+import json
+
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+from bleach import clean
+from django import forms
+
+class RegistrationForm(forms.ModelForm):
+    username = forms.CharField(max_length=100)
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned_data = super(RegistrationForm, self).clean()
+        username = cleaned_data.get('username')
+        password = cleaned_data.get('password')
+
+    class Meta:
+        model = User
+
+@csrf_protect
+def signup(request):
+    obj = json.loads(request.body)
+    form = RegistrationForm(obj)
+    if form.is_valid():
+        user = form.save(False)
+        user.set_password(user.password)
+        user.save()
+        user = authenticate(username=user.username, password=obj['password'])
+        login(request, user)
+        return JsonResponse({'username': obj['username']})
+    return JsonResponse({'username': '' })
+    # return JsonResponse({'username': })
+
+@csrf_protect
+def form_login(request):
+    obj = json.loads(request.body)
+    user = authenticate(username=obj['username'], password=obj['password'])
+    if user is not None:
+        login(request, user)
+        return JsonResponse({'username': obj['username']})
+    return JsonResponse({'username': '' })
+
+
+@csrf_protect
+def ping_login(request):
+    obj = json.loads(request.body)
+    if request.user.is_authenticated:
+        return JsonResponse({'username': request.user.username })
+    return JsonResponse({'username': '' })
+
+@csrf_protect
+def logout(request):
+    if request.user.is_authenticated:
+        logout(request)
+    return HttpResponse()
+
+@ensure_csrf_cookie
+def csrf(request):
+    return HttpResponse()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     #path('chat/', include('apps.chat.urls')),
-    path('auth/', include('django.contrib.auth.urls')),
+    path('csrf/', csrf),
+    path('auth/signup/', signup),
+    path('auth/login', form_login),
+    path('auth/logout', logout),
 ]
