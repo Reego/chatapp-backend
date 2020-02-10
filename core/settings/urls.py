@@ -27,16 +27,9 @@ from bleach import clean
 from django import forms
 
 class RegistrationForm(forms.ModelForm):
-    username = forms.CharField(max_length=100)
-    password = forms.CharField(widget=forms.PasswordInput)
-
-    def clean(self):
-        cleaned_data = super(RegistrationForm, self).clean()
-        username = cleaned_data.get('username')
-        password = cleaned_data.get('password')
-
     class Meta:
         model = User
+        fields = ['username', 'password']
 
 @csrf_protect
 def signup(request):
