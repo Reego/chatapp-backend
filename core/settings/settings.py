@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'core',
     'apps.user',
     'apps.chat',
-    # 'channels',
+    'channels',
     # 'rest_framework',
     'corsheaders',
     'django.contrib.admin',
@@ -37,7 +37,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'core.settings.middleware.simple_middleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -66,9 +65,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'core.settings.wsgi.application'
+# WSGI_APPLICATION = 'core.settings.wsgi.application'
 
-# ASGI_APPLICATION = 'core.settings.routing.application'
+ASGI_APPLICATION = 'core.settings.routing.application'
 
 CHANNEL_LAYERS = {
     'default': {

@@ -5,7 +5,7 @@ from bleach import clean
 from datetime import datetime
 
 class ChatUser(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     groups = models.ManyToManyField('Group')
 
     # user related
@@ -51,7 +51,7 @@ class ChatUser(models.Model):
     # notifications related
 
     def has_read(self, group_id):
-        return Notification.objects.get(user=self, group=group).read
+        return Notifications.objects.get(chat_user=self, group__id=group_id).read
 
     def get_notifications_obj(self, group_id):
         return Notifications.objects.filter(chat_user__id=self.id, group__id=group_id).get()
@@ -66,10 +66,10 @@ class Group(models.Model):
     group_name = models.CharField(max_length=150)
     last_message_time = models.DateTimeField(null=True)
 
-    def send_message(self, content, username=None):
-        if(username):
+    def send_message(self, content, username=''):
+        if(username != ''):
             now = datetime.utcnow()
-            if self.last_message_time is None or (now - self.last_message_time).days > 0:
+            if self.last_message_time is None or (now - self.last_message_time).days > 100000:
                 date_message = Message.objects.create(group=self, content=now)
                 date_message.save()
             self.last_message_time = now
@@ -80,6 +80,7 @@ class Group(models.Model):
         chat_user = User.objects.get(username=username).chatuser
         if not (chat_user in self.chatuser_set.all()):
             chat_user.groups.add(self)
+            chat_user.save()
         else:
             raise Exception('User already exists')
 
@@ -89,6 +90,7 @@ class Group(models.Model):
 
     def change_name(self, new_name):
         self.group_name = new_name
+        self.save()
 
     def get_users(self):
         chatusers = [chatuser.user.username for chatuser in group.chatuser_set.all()]

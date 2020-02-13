@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 import json
@@ -48,6 +48,8 @@ def signup(request):
 @csrf_protect
 def form_login(request):
     obj = json.loads(request.body)
+    print(obj)
+    print('\n\n\n\n')
     user = authenticate(username=obj['username'], password=obj['password'])
     if user is not None:
         login(request, user)
@@ -63,7 +65,7 @@ def ping_login(request):
     return JsonResponse({'username': '' })
 
 @csrf_protect
-def logout(request):
+def ping_logout(request):
     if request.user.is_authenticated:
         logout(request)
     return HttpResponse()
@@ -74,9 +76,9 @@ def csrf(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    #path('chat/', include('apps.chat.urls')),
+    path('chat/', include('apps.chat.urls')),
     path('csrf/', csrf),
     path('auth/signup/', signup),
-    path('auth/login', form_login),
-    path('auth/logout', logout),
+    path('auth/login/', form_login),
+    path('auth/logout/', ping_logout),
 ]

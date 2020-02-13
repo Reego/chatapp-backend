@@ -6,7 +6,7 @@
 #     re_path(r'ws/chat/', consumers.ChatAppConsumer),
 # ]
 
-from django.urls import path
+from django.urls import path, re_path
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
@@ -17,7 +17,7 @@ application = ProtocolTypeRouter({
         AuthMiddlewareStack(
             URLRouter(
                 [
-                    path('ws/chat/', consumers.ChatAppConsumer),
+                    re_path(r'ws/chat/', consumers.ChatAppConsumer),
                 ]
             )
         )
