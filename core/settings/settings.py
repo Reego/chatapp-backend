@@ -24,7 +24,6 @@ DEBUG = True
 INSTALLED_APPS = [
     'core',
     'apps.user',
-    'apps.chat',
     'channels',
     # 'rest_framework',
     'corsheaders',
@@ -133,6 +132,7 @@ CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://127.0.0.1',
+    'http://localhost',
     # 'localhost',
     # '127.0.0.1',
     # '127.0.0.1:3000'

@@ -58,10 +58,15 @@ class ChatAppConsumer(JsonWebsocketConsumer):
 
     # Sends the payload to the channel specified by the given group_id
     def group_send(self, group_id, payload):
+        print('\n\nGROUP SEND TO ' + str(group_id))
         async_to_sync(self.channel_layer.group_send)(
             str(group_id),
-            json.dumps(payload)
+            payload
         )
+        # async_to_sync(self.channel_layer.group_send)(
+        #     str(group_id),
+        #     json.dumps(payload)
+        # )
 
     # Receives
     def receive_json(self, data):
@@ -117,7 +122,6 @@ class ChatAppConsumer(JsonWebsocketConsumer):
         elif body['type'] == 'DELETE':
             self.chatuser.delete_group(body['group_id'])
             self.chatuser.save()
-
             self.sendObj(ChatAppConsumer.out('GROUP_DELETE', body['group_id']))
         elif body['type'] == 'READ':
             notifications = self.chatuser.get_notifications_obj(body['group_id'])
@@ -134,7 +138,7 @@ class ChatAppConsumer(JsonWebsocketConsumer):
             username = body['username']
             message = body['message']
             group.send_message(message, username)
-            self.sendObj(ChatAppConsumer.out('MESSAGE', group.id, message, username))
+            self.group_send(group.id, ChatAppConsumer.out('MESSAGE', group.id, message, username))
 
         # special chat command
         elif body['type'] == 'COMMAND':
@@ -143,19 +147,19 @@ class ChatAppConsumer(JsonWebsocketConsumer):
     # processes special chat commands
     def receive_chat_special_command(self, command):
 
-        print('BURHR')
-
         # if invalid command, only send back to user
         group = Group.objects.get(id=command['group_id'])
+
+        print(group)
 
         # adds user to group
         if command['command'] == 'ADD':
             message = 'Added ' + command['username'] + ' to the group.'
 
-            group.add_user(command['group_id'], command['username'])
+            group.add_user(command['username'])
             group.send_message(message)
 
-            self.sendObj(ChatAppConsumer.out('MESSAGE', group.id, message))
+            self.group_send(group.id, ChatAppConsumer.out('MESSAGE', group.id, message))
 
         # changes group name
         elif command['command'] == 'CHANGE_NAME':
@@ -164,14 +168,13 @@ class ChatAppConsumer(JsonWebsocketConsumer):
             message = 'Group name has been changed'
 
             group.change_name(new_name)
-            print(group.group_name)
             group.send_message(message)
 
-            self.sendObj(ChatAppConsumer.out('GROUP_NAME_CHANGE', group.id, new_name))
-            self.sendObj(ChatAppConsumer.out('MESSAGE', group.id, message))
+            self.group_send(group.id, ChatAppConsumer.out('GROUP_NAME_CHANGE', group.id, new_name))
+            self.group_send(group.id, ChatAppConsumer.out('MESSAGE', group.id, message))
 
         # lists users in group
-        elif command['type'] == 'LIST': # individual group command
+        elif command['command'] == 'LIST': # individual group command
             self.sendObj(ChatAppConsumer.out('MESSAGE', group.id, group.get_users()))
         # invalid command
         else:
@@ -180,11 +183,15 @@ class ChatAppConsumer(JsonWebsocketConsumer):
     def sendObj(self, obj):
         self.send(text_data=json.dumps(obj))
 
+    def chat_message(self, obj):
+        self.sendObj(obj)
+
     @staticmethod
-    def out(command_type, group_id, message='', username=''):
+    def out(command_type, group_id, message='', username='', type=''):
         return {
             'command_type': command_type,
             'group_id': str(group_id),
             'message': message,
             'username': username,
+            'type': 'chat_message',
         }

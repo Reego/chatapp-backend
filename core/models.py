@@ -51,7 +51,7 @@ class ChatUser(models.Model):
     # notifications related
 
     def has_read(self, group_id):
-        return Notifications.objects.get(chat_user=self, group__id=group_id).read
+        return Notifications.objects.filter(chat_user__id=self.id, group__id=group_id).get().read
 
     def get_notifications_obj(self, group_id):
         return Notifications.objects.filter(chat_user__id=self.id, group__id=group_id).get()
@@ -77,9 +77,13 @@ class Group(models.Model):
         message.save()
 
     def add_user(self, username):
-        chat_user = User.objects.get(username=username).chatuser
+        chat_user = ChatUser.get_chat_user(User.objects.get(username=username))
         if not (chat_user in self.chatuser_set.all()):
             chat_user.groups.add(self)
+
+            notifications = Notifications.objects.create(chat_user=chat_user, group=self)
+            notifications.save()
+
             chat_user.save()
         else:
             raise Exception('User already exists')
@@ -93,8 +97,8 @@ class Group(models.Model):
         self.save()
 
     def get_users(self):
-        chatusers = [chatuser.user.username for chatuser in group.chatuser_set.all()]
-        return chatusers.join(', ')
+        chatusers = [chatuser.user.username for chatuser in self.chatuser_set.all()]
+        return ', '.join(chatusers)
 
 class Notifications(models.Model):
     chat_user = models.ForeignKey(ChatUser, on_delete=models.CASCADE)
